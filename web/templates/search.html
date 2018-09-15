@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ wd }}_假的搜索引擎</title>
+    <link rel="shortcut icon" type="image/png" href="{{STATIC_URL}}/favicon.ico"/>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.js"></script>
+    <link href="https://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <link rel="stylesheet" type="text/css" href="/static/css/search.css">
+</head>
+<body>
+
+{% include 'header.html' %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="dropdown result">
+                为你找到<span id="len"></span>条结果, 用时<span id="cost"></span>秒
+                <a class='dropdown-toggle' id="dm1" type="button" data-toggle="dropdown" style="float: right">
+                    高级
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dm1" style="width: 60px">
+                    <div class="time-block">
+                        <li role="presentation">
+                            <p>时间限制</p>
+                        </li>
+                        <div class="form-group">
+                            <div class='input-group'>
+                                <input type='text' class="form-control" placeholder="起始: 2000-01-25" id="bg-time"/>
+                            </div>
+                            <div class='input-group'>
+                                <input type='text' class="form-control" placeholder="截止: 2000-01-25" id="ed-time"/>
+                            </div>
+                        </div>
+                    </div>
+                </ul>
+            </div>
+            <div class="brief-list"></div>
+            <ul class="pagination"></ul>
+        </div>
+    </div>
+
+</div>
+
+{% include 'footer.html' %}
+
+<script>
+var post_list = [];
+var page_size = 10;
+var page_limit = 0;
+var page_number = 7;
+var page = 0;
+var ci = [];
+function GoSubmit() {
+    console.log('here');
+    $('#search-bg').val($('#bg-time').val());
+    $('#search-ed').val($('#ed-time').val());
+}
+function createBrief(data) {
+    var s = '';
+    s += "<div class='the-brief'>";
+    s += "<h3 class='brief-title'><a href='{% url 'post_info' %}?id="+ data['TID'] + "' target='_blank' class='brief-title-inner'>" + data['title'] + "</a></h3>";
+    s += "<div class='brief-comment'>" + data['time'] + " - " + data['source'] + "</div>";
+    s += "<p class='brief-content'>" + data['brief'] + '</p>';
+    s += "</div>";
+    return s;
+}
+function updBrief() {
+    $('.brief-list').empty();
+    var ask_list = {};
+    var bg = (page - 1) * page_size;
+    var ed = page * page_size;
+    if (bg >= post_list.length)
+        return;
+    if (ed > post_list.length)
+        ed = post_list.length;
+    for (var i = bg; i < ed; ++i) {
+        ask_list['' + (i - bg)] = Number(post_list[i]);
+    }
+    $.ajax({
+        url: "{% url 'ajax_post_brief' %}",
+        data: ask_list,
+        success: function(ret) {
+            for (var i in ret) {
+                $('.brief-list').append(createBrief(ret['' + i]));
+            }
+            var arr = $('.brief-title-inner, .brief-content');
+            for (var x = 0; x < arr.length; ++x) {
+                var s = arr[x].innerHTML;
+                for (var i in ci) {
+                    s = s.split(ci[i]).join("<span class='highlight'>" + ci[i] + "</span>");
+                }
+                arr[x].innerHTML = s;
+            }
+        }
+    });
+}
+function updPagination() {
+    $('.pagination').empty();
+    var blk = Math.floor((page - 1) / page_number);
+    var bg = blk * page_number + 1;
+    var ed = (blk + 1) * page_number;
+    if (page == bg && bg != 1) {
+        --bg;
+        --ed;
+    }
+    if (page == ed && ed != page_limit) {
+        ++bg;
+        ++ed;
+    }
+    if (ed > page_limit)
+        ed = page_limit;
+    var s = "";
+    if (page != 1)
+        s += "<li class='page_prev'><a href='#'>&lt;上一页</a></li>";
+
+    for (var i = bg; i <= ed; ++i) {
+        s += "<li id='page_" + i + "' the_id='" + i + "'" + (i == page ? " class='active'" : "") + "><a href='#'>" + i + "</a></li>";
+    }
+
+    if (page != page_limit)
+        s += "<li class='page_next'><a href='#'>下一页&gt;</a></li>";
+    $('.pagination').append(s);
+
+    if (page != 1)
+        $('.pagination .page_prev').click(function() {
+            page--;
+            updPagination();
+            updBrief();
+        });
+    if (page != page_limit)
+        $('.pagination .page_next').click(function() {
+            page++;
+            updPagination();
+            updBrief();
+        });
+    for (var i = bg; i <= ed; ++i) {
+        $('#page_' + i).click(function() {
+            page = $(this).attr('the_id');
+            updPagination();
+            updBrief();
+        });
+    }
+}
+$(document).ready(function(){
+    $('#search_edit').attr('value', '{{ wd }}');
+    $('#bg-time').attr('value', '{{ bg }}');
+    $('#ed-time').attr('value', '{{ ed }}');
+    $.ajax({
+        url: "{% url 'ajax_search' %}",
+        data: {'wd': '{{ wd }}', 'bg': '{{ bg }}', 'ed': '{{ ed }}'},
+        success: function(ret) {
+            $('#len').html(ret['len']);
+            $('#cost').html(ret['cost']);
+            ci = ret['ci'];
+            post_list = ret['data'];
+            page_limit = Math.ceil(post_list.length / page_size);
+            page = 1;
+            updPagination();
+            updBrief();
+        }
+    });
+});
+</script>
+
+</body>
+</html>

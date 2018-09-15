@@ -1,0 +1,6 @@
+.idea
+__pycache__
+bak
+db.sqlite3
+people.json
+xinhua.json

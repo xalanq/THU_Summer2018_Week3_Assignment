@@ -1,0 +1,17 @@
+<link rel="stylesheet" type="text/css" href="/static/css/header.css">
+<nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/"><img id="logo" src="/static/img/logo.png" height="40"/></a>
+        </div>
+        <form id='search-form' class="navbar-form navbar-left" role="search" onsubmit="GoSubmit();" action="{% url 'search' %}" method="get" id="search_form">
+            <div class="form-group">
+                <input type="text" name="wd" class="form-control" id="search_edit" autocomplete="off">
+                <input type="hidden" name="bg" value="" id="search-bg">
+                <input type="hidden" name="ed" value="" id="search-ed">
+            </div>
+            <button class="btn btn-default" type="submit" id="search-btn">搜索一下</button>
+        </form>
+    </div>
+</nav>
+

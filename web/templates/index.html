@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+    <meta charset="UTF-8">
+    <title>假的新闻搜索 - xalanq</title>
+    <link rel="shortcut icon" type="image/png" href="{{STATIC_URL}}/favicon.ico"/>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.js"></script>
+    <link href="https://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <link rel="stylesheet" type="text/css" href="/static/css/index.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="row panel-center">
+        <div class="text-center">
+            <a href="/"><img src="/static/img/logo.png"/></a>
+        </div>
+        <form action="{% url 'search' %}" method="get" id="search_form">
+            <div class="input-group">
+                <input type="text" name="wd" class="form-control" id="search_edit" autocomplete="off">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="submit" >搜索一下</button>
+                </span>
+            </div>
+        </form>
+        <div class="panel with-nav-tabs panel-default">
+            <div class="panel-heading" style="padding-left: 4px; padding-top: 4px; padding-bottom: 1px; border-bottom: 0px">
+                <ul class="nav nav-tabs" id="tab-header"></ul>
+            </div>
+            <div class="panel-body">
+                <div class="tab-content" id="tab-content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'footer.html' %}
+
+<script>
+$(document).ready(function(){
+    $.ajax({
+        url: "{% url 'ajax_index_category' %}",
+        success: function(ret) {
+            var header = '';
+            var content = '';
+            var cnt = 0;
+            for (x in ret) {
+                cnt++;
+                header += "<li" + (cnt == 1 ? " class='active'" : "") + "><a href='#tab" + cnt + "' data-toggle='tab'>" + ret[x] + "</a></li>";
+                content += "<div class='tab-pane fade" + (cnt == 1 ? " in active" : "") + "' id='tab" + cnt + "'></div>"
+            }
+            $('#tab-header').append(header);
+            $('#tab-content').append(content);
+            cnt = 0;
+            for (x in ret) {
+                cnt++;
+                $.ajax({
+                    url: "{% url 'ajax_index_post' %}",
+                    indexValue: cnt,
+                    data: {'category': x},
+                    success: function(ret) {
+                        var tab = $('#tab' + this.indexValue);
+                        var str = '';
+                        var len = Number(ret['len'])
+                        for (var i = 0; i < len; ++i) {
+                            var data = ret['' + i];
+                            str += "<li><a href='{% url 'post_info' %}?id=" + data['TID'] + "'>" + data['title'] + " - " + data['time'] + "</a></li>";
+                        }
+                        tab.append(str)
+                    }
+                });
+            }
+        },
+    });
+    $.ajax({
+        url: "{% url 'ajax_total' %}",
+        success: function(ret) {
+            $('.footer').append(" 总共收录" + ret['total'] + "条新闻");
+        }
+    });
+});
+</script>
+
+</body>
+</html>
