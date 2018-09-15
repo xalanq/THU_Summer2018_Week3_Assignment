@@ -20,13 +20,13 @@
 
 ## 使用
 
-首先使用`scaper`文件夹下的爬虫`scraper.py`对“人民网”、“新华网”的新闻进行爬取
+首先使用`scraper`文件夹下的爬虫`scraper.py`对“人民网”、“新华网”的新闻进行爬取
 
 ```
 python scraper.py
 ```
 
-之后会将爬取的数据存储到`peaple.json`和`xinhua.json`中
+之后会将爬取的数据存储到`people.json`和`xinhua.json`中
 
 然后在`web`文件夹下，运行
 
